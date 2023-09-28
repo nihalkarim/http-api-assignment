@@ -1,32 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <title>Our simple HTTP server</title>
-  <link rel="stylesheet" type="text/css" href="/style.css">
-  
-  <script>
 
-  </script>
+<head>
+	<title>Our simple HTTP server</title>
+	<link rel="stylesheet" type="text/css" href="/style.css">
+
+	<script>
+		const handleResponse = async (response) => {
+			const content = document.querySelector("#content");
+
+			switch (response.status) {
+				case 200:
+					content.innerHTML = '<b>Success</b>';
+					break;
+				case 400:
+					content.innerHTML = '<b>Bad Request</b>';
+					break;
+				case 401:
+					content.innerHTML = '<b>Unauthorized</b>';
+					break;
+				case 403:
+					content.innerHTML = '<b>Forbidden</b>';
+					break;
+				case 404:
+					content.innerHTML = '<b>Not Found</b>';
+					break;
+				case 500:
+					content.innerHTML = '<b>Internal</b>';
+					break;
+				case 501:
+					content.innerHTML = '<b>Not Implemented</b>';
+					break;
+				default:
+					content.innerHTML = '<b>Status code not implemented by client</b>';
+					break;
+			}
+
+			const responseText = await response.text();
+			console.log(responseText);
+
+			const message = document.createElement('h5');
+			const id = document.createElement('h5');
+			const type = document.createElement('h4');
+			const rawData = document.createElement('p');
+			
+			const contentType = response.headers.get('Content-Type');
+			if (contentType === 'application/json') {
+				const parsedResponse = JSON.parse(responseText);
+				console.log(parsedResponse);
+				message.textContent = `Message: ${parsedResponse.message}`;
+				if(parsedResponse.id) id.textContent = `ID: ${parsedResponse.id}`;
+				
+			}
+			else if (contentType === 'text/xml') {
+				const parsedResponse = new window.DOMParser().parseFromString(responseText, 'text/xml');
+				console.log(parsedResponse);
+				message.textContent = `Message: ${parsedResponse.querySelector('message').textContent}`;
+				if(parsedResponse.querySelector('id')) id.textContent = `ID: ${parsedResponse.querySelector('id').textContent}`;
+			}
+
+			type.textContent = contentType;
+			rawData.textContent = responseText;
+
+			content.appendChild(type);
+			content.appendChild(message);
+			content.appendChild(id);
+			content.appendChild(rawData);
+		};
+
+
+		const sendFetch = async (url, acceptedType) => {
+			const options = {
+				method: 'GET',
+				headers: { 'Accept': acceptedType },
+			};
+
+			const response = await fetch(url, options);
+			handleResponse(response);
+			// console.log(response);
+		};
+
+		const init = () => {
+			const requestSelect = document.querySelector("#page");
+			const typeSelect = document.querySelector("#type");
+			const sendButton = document.querySelector("#send");
+
+			sendButton.addEventListener('click', () => { sendFetch(requestSelect.value, typeSelect.value) });
+		}
+
+		window.onload = init;
+
+	</script>
 </head>
+
 <body>
-  <section id="top">
-    <h3>Status Code Tests</h3>
-    <select id="page">
-      <option value="/success">Success</option>
-      <option value="/badRequest">Bad Request</option>
-      <option value="/unauthorized">Unauthorized</option>
-      <option value="/forbidden">Forbidden</option>
-      <option value="/internal">Internal</option>
-      <option value="/notImplemented">Not Implemented</option>
-      <option value="/notFound">Not Found</option>
-    </select>
-    <select id="type">
-      <option value="application/json">JSON</option>
-      <option value="text/xml">XML</option>
-    </select>
-    <button id="send">Send</button>
-  </section>
-  <section id="content">
-  </section>
+	<section id="top">
+		<h3>Status Code Tests</h3>
+		<select id="page">
+			<option value="/success">Success</option>
+			<option value="/badRequest">Bad Request</option>
+			<option value="/unauthorized">Unauthorized</option>
+			<option value="/forbidden">Forbidden</option>
+			<option value="/internal">Internal</option>
+			<option value="/notImplemented">Not Implemented</option>
+			<option value="/notFound">Not Found</option>
+		</select>
+		<select id="type">
+			<option value="application/json">JSON</option>
+			<option value="text/xml">XML</option>
+		</select>
+		<button id="send">Send</button>
+	</section>
+	<section id="content">
+	</section>
 </body>
+
 </html>
